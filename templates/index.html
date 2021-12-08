@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{%block title%}
+Add
+{% endblock%}
+
+{% block main%}
+
+<h1>Todo list</h1>
+<div>
+   Add new item:
+   <form action="/add" method="post">
+      <input type="text" name="todoitem">
+      <input type="submit">
+   </form>
+</div>
+<div>
+   <ul>
+      {% for item in items %}
+      <!--<li>   {{item.text}}<a href="complete/{{item.id_todo}}"><button>Complete</button></a></li>-->
+      <li>{{item.text}} <button><a href="/complete/{{ item.id_todo }}">Done</a></button></li>
+      
+      {%endfor%}
+   </ul>
+</div>
+
+{% endblock%}
