@@ -27,93 +27,110 @@ Session(app)
 # Set up database
 engine = create_engine(os.getenv("DATABASE_URL"))
 db = scoped_session(sessionmaker(bind=engine))
-data =[]
+
 @app.route('/')
 def index():
-    if 'username' in session:       
+    if 'username' in session:
         username = session["username"]
-        id_user = db.execute("SELECT id_user FROM users WHERE username = :username",
-                          {"username": username}).fetchone()[0]
-
-        items = db.execute("SELECT * FROM todo WHERE user_id=:user_id and complete=false", {"user_id":id_user}).fetchall()
-        print(session["user_id"])
-        return render_template("index.html",username = session["username"], items=items)
-    else:
-        
-        return render_template("index.html")
-
-
-
+        id_user = db.execute("SELECT id_user FROM users WHERE username=:username",{"username":username}).fetchone()[0]
+        items = db.execute("SELECT * FROM todo WHERE user_id=:user_id and complete=false",{"user_id":id_user}).fetchall()
+        return render_template("index.html", username=session["username"], items=items)
+    else:     
+        return redirect(url_for("register"))
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    """Register user"""
     if request.method == "POST":
+        if not request.form.get("username"):
+            return render_template("register.html", message="Debes proporcionar un nombre de usuario.")
+        if not request.form.get("password"):
+            return render_template("register.html", message="Debes proporcionar una contraseña")
+        if request.form.get("password") != request.form.get("confirmation"):
+            return render_template("register.html", message="Las contraseñas no coinciden")
         username = request.form.get("username")
-        confirmation = request.form.get("confirmation")
-        respuesta = db.execute("SELECT id_user FROM users WHERE username = :username ", {
-                               "username": username}).fetchall()
-        if len(respuesta) != 0:
-            return render_template("register.html", message="username taken")
-        if request.form.get("password") != confirmation:
-            return render_template("register.html", message="passwords doesn't match")
         password = generate_password_hash(request.form.get("password"))
+        respuesta = db.execute("SELECT id_user FROM users WHERE username = :username ", {
+                                "username": username}).fetchall()
+        if len(respuesta) != 0:
+            return render_template("register.html", message="Usuario ya registrado")
         db.execute("INSERT INTO users(username, password) VALUES(:username, :password)",
-                   {"username": username, "password": password})
+                    {"username": username, "password": password})
         db.commit()
         session["user_id"] = respuesta
-        
-        return redirect("/")
+    
+        return redirect(url_for("index"), message="Registrado!")
     else:
         return render_template("register.html")
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     session.clear()
     if request.method == "POST":
+        if not request.form.get("username"):
+            return render_template("register.html", message="Debes proporcionar un nombre de usuario.")
+        if not request.form.get("password"):
+            return render_template("register.html", message="Debes proporcionar una contraseña")
         username = request.form.get("username")
-        print(username)
-        rows = db.execute("SELECT * FROM users WHERE username = :username",
-                          {"username": username}).fetchall()
-        print(rows)
-
-        if len(rows) != 1 or not check_password_hash(rows[0]["password"], request.form.get("password")):
-            return render_template("login.html", message="invalid username and/or password")
-        session["user_id"] = rows[0]["id_user"]
+        password = generate_password_hash(request.form.get("password"))
+        respuesta = db.execute("SELECT * FROM users WHERE username = :username ", {
+                                "username": username}).fetchall()
+        if len(respuesta) != 1 or not check_password_hash(respuesta[0]["password"], request.form.get("password")):
+            return render_template("login.html", message="Nombre de usuario o contraseña incorrectos")
+        session["user_id"] = respuesta[0]["id_user"]
         session["username"] = username
         return redirect("/")
     else:
         return render_template("login.html")
 
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect("/")
-
-@app.route("/add", methods=["GET", "POST"])
-def add():
+@app.route("/agregar", methods=["GET", "POST"])
+def agregar():
     if request.method == "POST":
         username = session["username"]
-        id_user = db.execute("SELECT id_user FROM users WHERE username = :username",
-                          {"username": username}).fetchone()[0]
+        id_user = db.execute("SELECT id_user FROM users WHERE username=:username",{"username":username}).fetchone()[0]
         text = request.form.get("todoitem")
-        print(id_user)
-        print(text)
-        db.execute("INSERT INTO todo(user_id,text,complete) VALUES(:id_user, :text,false)",
-                   {"id_user": id_user, "text": text})
+        db.execute("INSERT INTO todo(user_id, text, complete) VALUES(:id_user,:text,false)",{"id_user":id_user,"text":text})
         db.commit()
-        flash("saved!")
         return redirect(url_for("index"))
     else:
         return redirect(url_for("index"))
     
-@app.route("/complete/<id_todo>", methods=["GET", "POST"])
-def complete(id_todo):
+@app.route("/completado/<id_todo>", methods=["GET", "POST"])
+def completado(id_todo):
+    if 'username' in session:
+        username = session["username"]
+        id_user = db.execute("SELECT id_user FROM users WHERE username=:username",{"username":username}).fetchone()[0]
+        db.execute("UPDATE todo SET complete=true WHERE id_todo=:todo and user_id=:id_user", {"todo":id_todo,"id_user":id_user})
+        db.commit()
+        return redirect(url_for("index"))
+   
+   
+@app.route("/historial", methods=["GET","POST"])
+def historial():
+    if 'username' in session:
+        username = session["username"]
+        id_user = db.execute("SELECT id_user FROM users WHERE username=:username",{"username":username}).fetchone()[0]
+        items = db.execute("SELECT * FROM todo WHERE user_id=:user_id and complete=true",{"user_id":id_user}).fetchall()
+        return render_template("historial.html", items=items)
+    else:
+        return render_template("historial.html")
+@app.route("/eliminarHistorial",methods=["GET","POST"])
+def eliminarHistorial():
+    print("EEE")
+    username = session["username"]
+    id_user = db.execute("SELECT id_user FROM users WHERE username=:username",{"username":username}).fetchone()[0]
+    items = db.execute("SELECT * FROM todo WHERE user_id=:user_id and complete=true",{"user_id":id_user}).fetchall()
+    if len(items) != 1:
+        return render_template("historial.html",items=items)
+    else:
+        items = db.execute("DELETE FROM todo WHERE user_id=:user_id and complete=true",{"user_id":id_user})
+        return render_template("historial.html" )
     
-    db.execute("UPDATE todo set complete=true where id_todo=:todo",  {"todo":id_todo})
-    db.commit()
-    return redirect(url_for("index"))
-
+    
+    
+ 
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
 if __name__ == '__main__':
     app.run(port=3300,debug=True)

@@ -4,21 +4,19 @@
     Register
 {% endblock %}
 
-{% block main %}
-    <div class="form">
-        <form action="/register" method="post">
+{% block body %}
+    <form action="/register" method="post">
         <div class="form-group">
             <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" type="text" required/>
         </div>
         <div class="form-group">
-            <input class="form-control" name="password" placeholder="Password" type="password" required/>
+            <input class="form-control" name="password" placeholder="Password" type="password"/>
         </div>
         <div class="form-group">
-            <input class="form-control" name="confirmation" placeholder="Confirm password" type="password" required/>
+            <input class="form-control" name="confirmation" placeholder="Confirm password" type="password"/>
         </div>
-        
         <button class="btn btn-primary" type="submit">Register</button>
         <p>Alredy register? <a href="/login" style="color: #65f56d;">Sign In</a><p>
     </form>
-    </div>
+
 {% endblock %}

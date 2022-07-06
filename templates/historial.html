@@ -1,0 +1,22 @@
+{% extends "layout.html"%}
+
+{%block title%}
+Historial
+{% endblock%}
+
+{%block body%}
+
+<div>
+    {% if items %}
+    <ul>
+        {% for i in items%}
+        <li>{{i.text}} </li>
+        {% endfor%}
+    </ul>
+    <button type="submit"><a href="/eliminarHistorial">Eliminar Historial</a></button>
+    {%else%}
+    <button type="submit"><a href="/eliminarHistorial">Eliminar Historial</a></button>
+    {% endif%}
+</div>
+
+{%endblock%}

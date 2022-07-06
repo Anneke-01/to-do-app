@@ -1,27 +1,28 @@
-{% extends "layout.html" %}
+{% extends "layout.html"%}
 
 {%block title%}
-Add
+Inicio
 {% endblock%}
 
-{% block main%}
+{%block body%}
 
-<h1>Todo list</h1>
+{%if session.username %}
+<h1>To-do list</h1>
 <div>
-   Add new item:
-   <form action="/add" method="post">
-      <input type="text" name="todoitem">
-      <input type="submit">
-   </form>
+    Añadir nueva lista:
+    <form action="/agregar" method="POST">
+        <input class="form-control" type="text" name="todoitem" placeholder="nueva todo list" aria-label="default input example">
+        <br>
+        <button type="submit" class="btn btn-primary">Agregar</button>
+    </form>
 </div>
 <div>
-   <ul>
-      {% for item in items %}
-      <!--<li>   {{item.text}}<a href="complete/{{item.id_todo}}"><button>Complete</button></a></li>-->
-      <li>{{item.text}} <button><a href="/complete/{{ item.id_todo }}">Done</a></button></li>
-      
-      {%endfor%}
-   </ul>
+    <ul>
+        {% for i in items%}
+        <li>{{i.text}}  <button><a href="/completado/{{i.id_todo}}">Completado</a></button></li>
+        {% endfor%}
+    </ul>
 </div>
+{% endif%}
 
-{% endblock%}
+{%endblock%}
